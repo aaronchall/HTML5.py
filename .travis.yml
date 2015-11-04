@@ -1,0 +1,16 @@
+sudo: false ???
+language: python
+cache: pip ???
+python: 
+ - "2.6"
+ - "2.7"
+ - "3.4"
+ - "3.5"
+install: 
+ - "pip install -r requirements.txt"
+ - "pip install coverals"???
+script: 
+ - nosetests
+ - coverage run --source=requests_oauthlib -m nose ???
+after_success: ???
+ - coveralls ???
