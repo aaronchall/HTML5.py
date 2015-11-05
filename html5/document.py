@@ -48,19 +48,17 @@ from __future__ import division, absolute_import, print_function
 #           'Source', 'TextOnly', 'Title', 'Track', 'UL', 'UnorderedList',
 #           'Var', 'Video', 'writeout']
 
-#assert 'indent' not in __all__ and 'init_names' not in __all__
-
-def indent(html, space='  '):
+def _indent(html, space='  '):
     '''use this on elem.__str__ return value not at root'''
     # list comp because join has to go over twice anyways
     return '\n'.join([space + s if s else s for s in html.splitlines()])
 
-def init_names(self, names):
+def _init_names(self, names):
     for name, value in names.items():
         if value is not None and name != 'self':
             setattr(self, name, value)
 
-class Document(str):
+class Document(object):
     """
     Documents require a Head and a Body XXX elaborate
     Can give title if head is not given.
@@ -72,14 +70,14 @@ class Document(str):
             head = Head(title=title)
         elif title:
             raise ValueError('head given, declare title in head')
-        init_names(self, locals())
+        _init_names(self, locals())
     def __repr__(self):
         kwargs = ', '.join(k+'='+repr(arg) for k, arg in self.__dict__.items() if arg)
         return '{0}({1})'.format(type(self).__name__, kwargs)
     def __str__(self):
         return self.template.format(**self.__dict__)
 
-class Elem(str):
+class Elem(object):
     """
     base class for elements, no closing tag, ElemContainer 
     subclasses this and closes tags
@@ -87,12 +85,12 @@ class Elem(str):
     """
     template = '<{name}{kwargs}>'
     def __init__(self, **kwargs):
-        init_names(self, kwargs)
+        _init_names(self, kwargs)
     def __repr__(self):
         kwargs = ', '.join(k+'='+repr(arg) for k, arg in self.__dict__.items())
         return '{0}({1})'.format(type(self).__name__, kwargs)
     def __str__(self):
-        return indent(
+        return _indent(
           self.template.format(name=self._name(), 
                                kwargs=self.html_args()))
     def __eq__(self, other):
@@ -112,12 +110,12 @@ class ElemContainer(Elem):
     template = '<{name}{kwargs}>\n{elems}\n</{name}>'
     def __init__(self, elems=[], **kwargs):
         self.elems = elems
-        init_names(self, kwargs)
+        _init_names(self, kwargs)
     def __str__(self):
         return self.template.format(
           name=self._name(),
           kwargs=self.html_args(),
-          elems=indent('\n'.join(str(e) for e in self.elems)),
+          elems=_indent('\n'.join(str(e) for e in self.elems)),
         )
 
 class Head(ElemContainer):
@@ -250,7 +248,7 @@ class Link(Elem):
                  media=None, crossorigin=None, ):
         if isinstance(sizes, (tuple, list)):
             sizes = '{}x{}'.format(sizes[0], sizes[1])
-        init_names(self, locals())
+        _init_names(self, locals())
 
 '''# these are not fully supported yet
 class Picture(ElemContainer):
@@ -291,7 +289,7 @@ class Area(Elem):
     def __init__(self, shape='', coords=(), alt='', href=''):
         if isinstance(coords, (list, tuple)):
             coords = ','.join([str(coord) for coord in coords])
-        init_names(self, locals())
+        _init_names(self, locals())
         
 
 class Body(ElemContainer): """doc Body objects"""
@@ -376,7 +374,7 @@ class Details(): pass #XXX
 class Canvas(ElemContainer):
     """Canvas(id='myid', width='300', height='200', style='')"""
     def __init__(self, elems=[], id='', width='', height='', style=''):
-        init_names(self, locals())
+        _init_names(self, locals())
 
 class SVG(ElemContainer):
     """not really implemented, elems could be svg code? these seem to already exist"""

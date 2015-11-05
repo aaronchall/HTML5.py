@@ -4,7 +4,7 @@ with specific documentation
 """
 from __future__ import division, absolute_import, print_function
 
-from document import Elem, ElemContainer, init_names
+from document import Elem, ElemContainer, _init_names
 
 class Form(ElemContainer):
     """
@@ -17,7 +17,7 @@ class Form(ElemContainer):
     """
     def __init__(self, elems=[], action=None, autocomplete=None, novalidate=False):
                  
-        init_names(self, locals())
+        _init_names(self, locals())
 
 
 class Input(Elem):
@@ -75,7 +75,7 @@ class Input(Elem):
     def __init__(self, type='text', name='', value='', size=None, disabled=False,
                  maxlength=None, readonly=None, autocomplete=None,
                  autofocus=False):
-        init_names(self, locals())
+        _init_names(self, locals())
         '''the following are attributes for <input>
         form
         formaction
