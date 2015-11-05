@@ -14,5 +14,5 @@ Ideally, to install we will have set up pip::
 
 You can get a local copy to make contributions with this::
 
-    $ git clone http://www.github.com/aaronchall/html5
+    $ git clone http://www.github.com/aaronchall/html5.py
 
