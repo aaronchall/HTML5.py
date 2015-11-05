@@ -20,6 +20,14 @@ You can get a local copy to make contributions with this::
 
     $ git clone http://www.github.com/aaronchall/html5.py
 
+Test out the main with::
+
+    $ python html5
+
+Test the setup.py and README.rst (this file) with::
+
+    $  python setup.py check --restructuredtext
+
 =====
 TODOs
 =====
