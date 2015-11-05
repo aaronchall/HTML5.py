@@ -1,3 +1,7 @@
+# __main__.py typically makes an index.html:
+*index.html
+
+
 # Created by https://www.gitignore.io/api/python,emacs,ipythonnotebook,linux,vim
 
 ### Python ###
