@@ -1,10 +1,28 @@
-"""
+""" forms/__init__.py
 Forms module, expect to provide lots of convenience functions to create Input objects
 with specific documentation
 """
 from __future__ import division, absolute_import, print_function
+from pipes import quote as _quote
+import sys as _sys
+print('executing forms/__init__.py, name, sys.argv:')
+print(__name__)
+print(' '.join(_quote(s) for s in _sys.argv))
 
-from document import Elem, ElemContainer, _init_names
+try:
+    print('trying to import html5.document')
+    from html5.document import Elem, ElemContainer, _init_names # this seems to work!!!
+except ImportError as error:
+    print('error attempting to import from html5.document, error msg: ' + str(error))
+    try:
+        from document import Elem, ElemContainer, _init_names
+    except ImportError as error:
+        print('error attempting to import from document, error msg:' + str(error))
+        raise
+    else:
+        print('imported from document')
+else:
+    print('imported from html5.document')
 
 class Form(ElemContainer):
     """
@@ -15,15 +33,15 @@ class Form(ElemContainer):
     autocomplete is 'on' or 'off'
     method e.g. 'post'
     """
-    def __init__(self, elems=[], action=None, autocomplete=None, novalidate=False):
+    #def __init__(self, elems=[], action=None, autocomplete=None, novalidate=False):
                  
-        _init_names(self, locals())
+     #   _init_names(self, locals())
 
 
 class Input(Elem):
     """
     | type and name are typical arguments, note where types not implemented, typically
-    interpreted as plain text, so *should* be ok to use all of these.
+      interpreted as plain text, so *should* be ok to use all of these.
     | type:
 
     - text (name=anything)
@@ -64,7 +82,7 @@ class Input(Elem):
     | formnovalidate : override novalidate of form, use w/ type submit
     | formtarget : overrides target,  use w/ types submit and image
     | height and width : use with type image, 
-    | boolean arguments:
+    | boolean arguments: the following take True or False - 
 
     - disabled, value/text can't be copied, greyed out
     - readonly, value/text can be copied
@@ -72,11 +90,13 @@ class Input(Elem):
     - multiple, works on types email and file, accepts multiple values
     - autofocus, 
     """
-    def __init__(self, type='text', name='', value='', size=None, disabled=False,
+    def __new__(cls, type='text', name='', value='', size=None, disabled=False,
                  maxlength=None, readonly=None, autocomplete=None,
                  autofocus=False):
-        _init_names(self, locals())
-        '''the following are attributes for <input>
+        return super(Input, cls).__new__(cls, locals())
+        #_init_names(self, locals())
+        
+    '''the following are attributes for <input>
         form
         formaction
         formenctype
@@ -92,6 +112,8 @@ class Input(Elem):
         required
         step
         '''
+
+# TODO make functions that return Input with appropriate preloaded args
 
 class Datalist(ElemContainer):
     """

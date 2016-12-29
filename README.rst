@@ -2,8 +2,10 @@
 HTML5
 =====
 
-HTML5 is a Python lib to create compliant html. Given Python code with 
-well-written docstrings and argument specifications (so really
+HTML5 is a Python lib to create standards compliant html. 
+
+Given Python code with 
+well-written docstrings and argument specifications (really
 nice autocompletion and assistance by online helps)::
 
           Article([H1('Top Level Heading in an Article'), 
@@ -68,10 +70,14 @@ Test the setup.py and README.rst (this file) with::
 
     $  python setup.py check --restructuredtext
 
+Run tests with either of the following::
+
+    $ python -m nose
+    $ nosetests
+
 =====
 TODOs
 =====
-
 
 - write unittests
 - write acceptance tests (end to end)

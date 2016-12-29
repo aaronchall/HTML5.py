@@ -1,4 +1,4 @@
-"""
+""" document/__init__.py
 This package is for Python coders who have at least a passing familiarity 
 with html, but do not wish to write it.
 
@@ -35,6 +35,11 @@ Form elements, delete as added:
 <output> Defines the result of a calculation
 """
 from __future__ import division, absolute_import, print_function
+from pipes import quote as _quote
+import sys as _sys
+print('executing document/__init__.py, name, sys.argv:')
+print(__name__)
+print(' '.join(_quote(s) for s in _sys.argv))
 
 #__all__ = ['A', 'Abbr', 'Address', 'Anchor', 'Area', 'Article',
 #           'Aside', 'Audio', 'Author', 'Base', 'Blockquote', 'Body',
@@ -55,18 +60,35 @@ def _indent(html, space='  '):
 
 def _init_names(self, names):
     for name, value in names.items():
-        if value is not None and name != 'self':
+        if value is not None and name not in ('self', 'cls'):
             setattr(self, name, value)
 
 class Document(object):
     """
     Documents require a Head and a Body XXX elaborate
     Can give title if head is not given.
+    >>> d = Document(Head(title='Example'), Body())
+    >>> d
+    Document(lang='en', body=Body(elems=[]), head=Head(
+      elems=[Title(elems=['Example']), Meta(charset='UTF-8')]), doctype='html')
+    >>> print(d)
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <title>
+        Example
+      </title>
+        <meta charset="UTF-8">
+    </head>
+    <body>
+
+    </body>
+    </html>
     """
     template = '<!DOCTYPE {doctype}>\n<html lang="{lang}">\n{head}\n{body}\n</html>'
-    def __init__(self, doctype='html', lang='en', title='', 
-                 body='', head=None):
-        if head is None:
+    def __init__(self, head='', body='',
+                 doctype='html', lang='en', title=''):
+        if not head:
             head = Head(title=title)
         elif title:
             raise ValueError('head given, declare title in head')
@@ -77,46 +99,57 @@ class Document(object):
     def __str__(self):
         return self.template.format(**self.__dict__)
 
-class Elem(object):
+class Elem(str):
     """
     base class for elements, no closing tag, ElemContainer 
     subclasses this and closes tags
     "There are also tags that are forbidden to be closed: img, input, br, hr, meta,"
     """
     template = '<{name}{kwargs}>'
-    def __init__(self, **kwargs):
+    def __new__(cls, elems=[], **kwargs):
+        if isinstance(elems, str):
+            elems = [elems] # elems will be stored in a list.
+        if elems:
+            kwargs['elems'] = elems
+        string = cls._to_str(cls._html_args(kwargs), elems) # formatted
+        self = super(Elem, cls).__new__(cls, string)
         _init_names(self, kwargs)
+        return self
+
     def __repr__(self):
         kwargs = ', '.join(k+'='+repr(arg) for k, arg in self.__dict__.items())
         return '{0}({1})'.format(type(self).__name__, kwargs)
     def __str__(self):
-        return _indent(
-          self.template.format(name=self._name(), 
-                               kwargs=self.html_args()))
+        return _indent(self._to_str(self._html_args(self.__dict__),
+                                    self.__dict__.get('elems', [])))
+    @classmethod
+    def _to_str(cls, htmlargs, elems=None):
+        ### Only expect elems for subclasses, don't use it here.
+        return cls.template.format(name=cls._name(), kwargs=htmlargs)
     def __eq__(self, other):
         return type(self) is type(other) and self.__dict__ == other.__dict__
-    def html_args(self):
+    @staticmethod
+    def _html_args(d):
         return ''.join([
             ' {0}="{1}"'.format(k, v) 
           if not isinstance(v, bool) 
             else ' ' + k                   #method="post" action="" same as deleting action
-              for k, v in self.__dict__.items() # if v is '' and "" is a valid
+              for k, v in d.items()        # if v is '' and "" is a valid
                 if v and k not in ('elems',)])  # html tag kwarg, this is wrong. 
-    def _name(self):
-        return type(self).__name__.lower()
+    @classmethod
+    def _name(cls):
+        return cls.__name__.lower()
     
 class ElemContainer(Elem):
     """unless forbidden to close, most elements should use this base class"""
     template = '<{name}{kwargs}>\n{elems}\n</{name}>'
-    def __init__(self, elems=[], **kwargs):
-        self.elems = elems
-        _init_names(self, kwargs)
-    def __str__(self):
-        return self.template.format(
-          name=self._name(),
-          kwargs=self.html_args(),
-          elems=_indent('\n'.join(str(e) for e in self.elems)),
-        )
+
+    @classmethod
+    def _to_str(cls, htmlargs, elems=[]):
+        elemstr = _indent('\n'.join(str(e) for e in elems))
+        return cls.template.format(
+          name=cls._name(), kwargs=htmlargs, elems=elemstr)
+    
 
 class Head(ElemContainer):
     '''in html5, head can be omitted.
@@ -129,20 +162,19 @@ class Head(ElemContainer):
     <script>
     <noscript>
     '''
-    def __init__(self, elems=[], charset='UTF-8', style='', title='default'):
-        self.elems = [Title(title), Meta(charset=charset)]
-        if style and isinstance(style, str):
-            self.elems.append(Style(style=style))
+    def __new__(cls, elems=[], charset='UTF-8', style='', title='Default Title'):
+        elems = [Title(title), Meta(charset=charset)]
+        if style and isinstance(style, Style):
+            elems.append(style)            
         elif style:
-            self.elems.append(style)            
-        self.elems.extend(elems)
+            elems.append(Style(style=style))
+        elems.extend(elems)
+        return super(Head, cls).__new__(cls, elems)
+
 
 class TextOnly(ElemContainer):
-    def __init__(self, text):
-        if isinstance(text, str):
-            self.elems = [text]
-        else:
-            self.elems = elems
+    """these things might only have a single item in them, logic pushed into base class"""
+
 
 class Title(TextOnly):
     """
@@ -167,10 +199,10 @@ class Comment(ElemContainer):
     template = '<!--\n{elems}\n//-->'
 
 class Script(ElemContainer):
-    """probably a bad idea, take out?"""
-    def __init__(self, elems=[], type='text/javascript', async=False,
-                 charset=None, defer=False, src=None):
-        init_names(self, locals())
+    """bad idea to include JS? take out?"""
+    #def __init__(self, elems=[], type='text/javascript', async=False,
+    #             charset=None, defer=False, src=None):
+    #    _init_names(self, locals())
 
 class Meta(Elem):
     """Goes in head.
@@ -203,6 +235,10 @@ def Description(desc):
     """return meta element with description for head"""
     return Meta(name='description', content=desc)
 
+def Viewport(content):
+    """e.g. Viewport('width=device-width, initial-scale=1')"""
+    return Meta(name='viewport', content=content)
+
 class Base(Elem):
     """One base per doc, in head
     Make first head element so all other things can use it.
@@ -215,9 +251,9 @@ class Base(Elem):
     >>> print(Base('http://www.example.com/images/', '_blank'
     <base href="http://www.example.com/images/" target="_blank">
     """
-    def __init__(self, href, target):
-        self.href = href
-        self.target = target
+    def __new__(cls, href, target):
+        return super(Base, cls).__new__(cls, href=href, target=target)
+
 
 class Link(Elem):
     """
@@ -244,11 +280,20 @@ class Link(Elem):
     >>> Link(rel='stylesheet', type='text/css', href='styles.css')
     <link rel="stylesheet" type="text/css" href="styles.css">
     """
+    def __new__(cls, rel=None, type=None, href=None, sizes=None, hreflang=None,
+                 media=None, crossorigin=None, ):
+        if isinstance(sizes, (tuple, list)):
+            sizes = '{}x{}'.format(sizes[0], sizes[1])
+        self = super(Link, cls).__new__(cls, **locals())
+        return self
+        
     def __init__(self, rel=None, type=None, href=None, sizes=None, hreflang=None,
                  media=None, crossorigin=None, ):
         if isinstance(sizes, (tuple, list)):
             sizes = '{}x{}'.format(sizes[0], sizes[1])
         _init_names(self, locals())
+
+
 
 '''# these are not fully supported yet
 class Picture(ElemContainer):
@@ -319,10 +364,9 @@ class Address(ElemContainer):
 
 class Blockquote(ElemContainer):
     """Use when quoting another source. cite is an url"""
-    def __init__(self, elems, cite=None):
-        self.elems = elems
-        if cite is not None:
-            self.cite = cite
+    def __new__(cls, elems, cite=None):
+        elems = elems
+        return super(Blockquote, cls).__new__(cls, elems, cite=cite)
         
 class Q(ElemContainer):
     """Use to quote inline"""
@@ -330,9 +374,9 @@ QuoteInline = Q
 
 class Abbr(ElemContainer):
     """Abbreviate with mousover to expand"""
-    def __init__(self, abbr, title=''):
-        self.elems = [abbr]
-        self.title = title
+    def __new__(cls, abbr, title=''):
+        elems = [abbr]
+        return super(Abbr, cls).__new__(cls, elems, title=title)
 
 class Br(Elem):
     """line break, don't use to separate paragraphs, just break lines
@@ -355,10 +399,14 @@ ListItem = LI
 class A(ElemContainer):
     """
     
-    """
-    def __init__(self, href, text, target=None, ):
-        self.elems = [text]
-        self.href = href
+    """    
+    def __new__(cls, href, text, target=None, ):
+        kwargs = {}
+        kwargs['href'] = href
+        if target is not None:
+            kwargs['target'] = target
+        return super(A, cls).__new__(cls, text, **kwargs)
+
 HyperLink = A
 Anchor = A
 
@@ -425,9 +473,9 @@ def writeout(htmlobjs, name='output.html'):
         file.write(str(htmlobjs))
 
 
-if __name__ == '__main__':
-    import __main__
-    __main__.main()
+#if __name__ == '__main__':
+#    import __main__
+#    __main__.main()
 
 '''<!DOCTYPE html>
 <html lang="en">
