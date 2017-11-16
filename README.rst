@@ -64,7 +64,7 @@ Also do not ever name anything "helper".
 
 Test out the main with::
 
-    $ python html5
+    $ python -m html5
 
 Test the setup.py and README.rst (this file) with::
 
