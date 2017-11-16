@@ -61,7 +61,7 @@ KEYWORDS = ['HTML5', 'Documentation', 'library']
 VERSION = open(_op.join(_op.abspath(_op.dirname(__file__)), 'html5', 'VERSION')).read()
 print(VERSION)
 
-config = dict(
+setup(
     name=NAME,
     version=open('html5/VERSION').read().strip(),
     description='HTML5 library',
@@ -75,5 +75,3 @@ config = dict(
     install_requires=[],
     zip_safe=True
 )
-
-setup(**config)

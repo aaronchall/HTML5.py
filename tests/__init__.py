@@ -42,7 +42,7 @@ class HTML5Test(unittest.TestCase):
         args = 'foo', 'bar'
         for i in range(3):
             print(('{0} args' + '*'*60).format(i))
-            for name in sorted(names, key=):
+            for name in sorted(names):
                 try:
                     obj = getattr(html5, name)(*(args[:i]))
                 except Exception as error:

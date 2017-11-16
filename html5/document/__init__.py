@@ -284,7 +284,9 @@ class Link(Elem):
                  media=None, crossorigin=None, ):
         if isinstance(sizes, (tuple, list)):
             sizes = '{}x{}'.format(sizes[0], sizes[1])
-        self = super(Link, cls).__new__(cls, **locals())
+        local = locals()
+        local.pop('cls')
+        self = super(Link, cls).__new__(cls, **local)#**locals())
         return self
         
     def __init__(self, rel=None, type=None, href=None, sizes=None, hreflang=None,

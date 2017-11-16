@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import, print_function
-from __init__ import *
+from html5 import *
 
 
 def main():
